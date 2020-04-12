@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+# Original implementation: https://github.com/subhadarship/kmeans_pytorch
 def initialize(X, num_clusters):
     """
     initialize cluster centers
@@ -15,20 +16,26 @@ def initialize(X, num_clusters):
     return initial_state
 
 
+# Original implementation: https://github.com/subhadarship/kmeans_pytorch
+@batch
 def kmeans(
         X,
         num_clusters,
+        max_iters=100,
+        progress=False,
         tol=1e-4):
     """
     perform kmeans
     :param X: (torch.tensor) matrix
     :param num_clusters: (int) number of clusters
-    :param distance: (str) distance [options: 'euclidean', 'cosine'] [default: 'euclidean']
+    :param max_iters: maximum iterations allowed (controls speed)
+    :param progress: whether to display progress bar + INFO
     :param tol: (float) threshold [default: 0.0001]
-    :param device: (torch.device) device [default: cpu]
     :return: (torch.tensor, torch.tensor) cluster ids, cluster centers
     """
-    print(f'running k-means on {X.device}..')
+
+    if progress:
+        print(f'running k-means on {X.device}..')
 
 
     pairwise_distance_function = pairwise_distance
@@ -37,7 +44,11 @@ def kmeans(
     initial_state = initialize(X, num_clusters)
 
     iteration = 0
-    tqdm_meter = tqdm(desc='[running kmeans]')
+
+    if progress:
+        tqdm_meter = tqdm(desc='[running kmeans]')
+
+
     while True:
         dis = pairwise_distance_function(X, initial_state)
         choice_cluster = torch.argmin(dis, dim=1)
@@ -58,14 +69,18 @@ def kmeans(
 
         # increment iteration
         iteration = iteration + 1
+        if iteration >= max_iters:
+            break
 
-        # update tqdm meter
-        tqdm_meter.set_postfix(
-            iteration=f'{iteration}',
-            center_shift=f'{center_shift ** 2:0.6f}',
-            tol=f'{tol:0.6f}'
-        )
-        tqdm_meter.update()
+        if progress:
+            # update tqdm meter
+            tqdm_meter.set_postfix(
+                iteration=f'{iteration}',
+                center_shift=f'{center_shift ** 2:0.6f}',
+                tol=f'{tol:0.6f}'
+            )
+            tqdm_meter.update()
+
         if center_shift ** 2 < tol:
             break
     return choice_cluster, initial_state
@@ -105,13 +120,14 @@ def kmeans_equal(
     perform kmeans on equally sized clusters
     :param X: (torch.tensor) matrix
     :param num_clusters: (int) number of clusters
-    :param distance: (str) distance [options: 'euclidean', 'cosine'] [default: 'euclidean']
+    :param max_iters: maximum iterations allowed (controls speed)
+    :param progress: whether to display progress bar + INFO
     :param tol: (float) threshold [default: 0.0001]
-    :param device: (torch.device) device [default: cpu]
     :return: (torch.tensor, torch.tensor) cluster ids, cluster centers
     """
 
-    print(f'running k-means for equal size clusters on {X.device}..')
+    if progress:
+        print(f'running k-means for equal size clusters on {X.device}..')
     pairwise_distance_function = pairwise_distance
 
     if initial_state is None:
@@ -155,48 +171,30 @@ def kmeans_equal(
 
         if center_shift ** 2 < tol:
             break
-        if iteration > max_iters:
+        if iteration >= max_iters:
             break
 
     return choices[:, 0], initial_state
 
 
-
-def kmeans_predict(
-        X,
-        cluster_centers,
-        distance='euclidean',
-        device=torch.device('cpu')
-):
+# Original implementation: https://github.com/subhadarship/kmeans_pytorch
+def kmeans_predict(X, cluster_centers):
     """
     predict using cluster centers
     :param X: (torch.tensor) matrix
     :param cluster_centers: (torch.tensor) cluster centers
-    :param distance: (str) distance [options: 'euclidean', 'cosine'] [default: 'euclidean']
-    :param device: (torch.device) device [default: 'cpu']
     :return: (torch.tensor) cluster ids
     """
     print(f'predicting on {device}..')
 
-    if distance == 'euclidean':
-        pairwise_distance_function = pairwise_distance
-    elif distance == 'cosine':
-        pairwise_distance_function = pairwise_cosine
-    else:
-        raise NotImplementedError
-
-    # convert to float
-    X = X.float()
-
-    # transfer to device
-    X = X.to(device)
-
+    pairwise_distance_function = pairwise_distance
     dis = pairwise_distance_function(X, cluster_centers)
     choice_cluster = torch.argmin(dis, dim=1)
 
-    return choice_cluster.cpu()
+    return choice_cluster
 
 
+# Original implementation: https://github.com/subhadarship/kmeans_pytorch
 def pairwise_distance(data1, data2):
 
     # N*1*M
