@@ -16,12 +16,34 @@ def initialize(X, num_clusters):
     return initial_state
 
 
+def batch(fn):
+    def do(X, *args, **kwargs):
+        batch_size = X.shape[0]
+
+        choices, centers = fn(X[0], *args, **kwargs)
+        choices = choices.unsqueeze(0)
+        centers = centers.unsqueeze(0)
+
+        for i in range(1, batch_size):
+            curr_choices, curr_centers = fn(X[i], *args, **kwargs)
+
+            # concat in the batch dimension
+            curr_choices = curr_choices.unsqueeze(0)
+            curr_centers = curr_centers.unsqueeze(0)
+            choices = torch.cat((choices, curr_choices), dim=0)
+            centers = torch.cat((centers, curr_centers), dim=0)
+
+        return choices, centers
+    return do
+
+
 # Original implementation: https://github.com/subhadarship/kmeans_pytorch
 @batch
 def kmeans(
         X,
         num_clusters,
         max_iters=100,
+        initial_state=None,
         progress=False,
         tol=1e-4):
     """
@@ -29,6 +51,7 @@ def kmeans(
     :param X: (torch.tensor) matrix
     :param num_clusters: (int) number of clusters
     :param max_iters: maximum iterations allowed (controls speed)
+    :param initial_state: controls initial cluster centers. If none, forgy initialization is used.
     :param progress: whether to display progress bar + INFO
     :param tol: (float) threshold [default: 0.0001]
     :return: (torch.tensor, torch.tensor) cluster ids, cluster centers
@@ -56,7 +79,7 @@ def kmeans(
         initial_state_pre = initial_state.clone()
 
         for index in range(num_clusters):
-            selected = torch.nonzero(choice_cluster == index).squeeze().to(device)
+            selected = torch.nonzero(choice_cluster == index).squeeze()
 
             selected = torch.index_select(X, 0, selected)
 
@@ -86,26 +109,6 @@ def kmeans(
     return choice_cluster, initial_state
 
 
-def batch(fn):
-    def do(X, *args, **kwargs):
-        batch_size = X.shape[0]
-
-        choices, centers = fn(X[0], *args, **kwargs)
-        choices = choices.unsqueeze(0)
-        centers = centers.unsqueeze(0)
-
-        for i in range(1, batch_size):
-            curr_choices, curr_centers = fn(X[i], *args, **kwargs)
-
-            # concat in the batch dimension
-            curr_choices = curr_choices.unsqueeze(0)
-            curr_centers = curr_centers.unsqueeze(0)
-            choices = torch.cat((choices, curr_choices), dim=0)
-            centers = torch.cat((centers, curr_centers), dim=0)
-
-        return choices, centers
-    return do
-
 
 @batch
 def kmeans_equal(
@@ -121,6 +124,7 @@ def kmeans_equal(
     :param X: (torch.tensor) matrix
     :param num_clusters: (int) number of clusters
     :param max_iters: maximum iterations allowed (controls speed)
+    :param initial_state: controls initial cluster centers. If none, forgy initialization is used.
     :param progress: whether to display progress bar + INFO
     :param tol: (float) threshold [default: 0.0001]
     :return: (torch.tensor, torch.tensor) cluster ids, cluster centers
