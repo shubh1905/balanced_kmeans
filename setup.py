@@ -37,7 +37,6 @@ setup(
     include_package_data=True,
     keywords=[],
     scripts=[],
-    entry_points={"console_scripts": ["kmeans_pytorch=kmeans_pytorch.main:main"]},
     zip_safe=False,
     install_requires=DEPENDENCIES,
     test_suite="tests.equal_clusters",
