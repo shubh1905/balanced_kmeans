@@ -33,14 +33,14 @@ def get_version():
 
 
 setup(
-    name="kmeans_pytorch",
+    name="balanced_kmeans",
     version=get_version(),
-    author="Subhadarshi",
-    author_email="subhadarshipanda08@gmail.com",
-    description="",
+    author="@giannisdaras",
+    author_email="daras.giannhs@gmail.com",
+    description="Balanced kmeans with cuda support in Pytorch.",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/subhadarship/kmeans_pytorch",
+    url="https://github.com/giannisdaras/balanced_kmeans",
     packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,
     keywords=[],
@@ -48,15 +48,10 @@ setup(
     entry_points={"console_scripts": ["kmeans_pytorch=kmeans_pytorch.main:main"]},
     zip_safe=False,
     install_requires=DEPENDENCIES,
-    test_suite="tests.test_project",
+    test_suite="tests.equal_clusters",
     python_requires=">=3.6",
-    # license and classifier list:
-    # https://pypi.org/pypi?%3Aaction=list_classifiers
     license="License :: OSI Approved :: MIT License",
     classifiers=[
-        "Programming Language :: Python",
-        # "Programming Language :: Python :: 3",
-        # "Operating System :: OS Independent",
-        # "Private :: Do Not Upload"
+        "Programming Language :: Python :: 3",
     ],
 )
