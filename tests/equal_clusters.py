@@ -1,4 +1,4 @@
-from kmeans_pytorch import kmeans_equal
+from balanced_kmeans import kmeans_equal
 import pytest
 import torch
 
