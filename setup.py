@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-# For a fully annotated version of this file and what it does, see
-# https://github.com/pypa/sampleproject/blob/master/setup.py
-
 # To upload this file to PyPI you must build it then upload it:
 # python setup.py sdist bdist_wheel  # build in 'dist' folder
 # python-m twine upload dist/*  # 'twine' must be installed: 'pip install twine'
@@ -16,7 +10,7 @@ import os
 from setuptools import find_packages, setup
 
 DEPENDENCIES = []
-EXCLUDE_FROM_PACKAGES = ["contrib", "docs", "tests*"]
+EXCLUDE_FROM_PACKAGES = ["tests*"]
 CURDIR = os.path.abspath(os.path.dirname(__file__))
 
 with io.open(os.path.join(CURDIR, "README.md"), "r", encoding="utf-8") as f:
