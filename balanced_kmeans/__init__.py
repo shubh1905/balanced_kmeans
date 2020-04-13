@@ -44,6 +44,7 @@ def kmeans(
         num_clusters,
         max_iters=100,
         initial_state=None,
+        update_centers=True,
         progress=False,
         tol=1e-4):
     """
@@ -52,6 +53,7 @@ def kmeans(
     :param num_clusters: (int) number of clusters
     :param max_iters: maximum iterations allowed (controls speed)
     :param initial_state: controls initial cluster centers. If none, forgy initialization is used.
+    :param update_centers: if False, then it runs one iteration to assign points in clusters.
     :param progress: whether to display progress bar + INFO
     :param tol: (float) threshold [default: 0.0001]
     :return: (torch.tensor, torch.tensor) cluster ids, cluster centers
@@ -63,8 +65,8 @@ def kmeans(
 
     pairwise_distance_function = pairwise_distance
 
-    # Step1: randomly group vectors to clusters
-    initial_state = initialize(X, num_clusters)
+    if initial_state is None:
+        initial_state = initialize(X, num_clusters)
 
     iteration = 0
 
@@ -83,7 +85,8 @@ def kmeans(
 
             selected = torch.index_select(X, 0, selected)
 
-            initial_state[index] = selected.mean(dim=0)
+            if update_centers:
+                initial_state[index] = selected.mean(dim=0)
 
         center_shift = torch.sum(
             torch.sqrt(
@@ -117,6 +120,7 @@ def kmeans_equal(
         cluster_size,
         max_iters=100,
         initial_state=None,
+        update_centers=True,
         progress=False,
         tol=1e-4):
     """
@@ -125,6 +129,7 @@ def kmeans_equal(
     :param num_clusters: (int) number of clusters
     :param max_iters: maximum iterations allowed (controls speed)
     :param initial_state: controls initial cluster centers. If none, forgy initialization is used.
+    :param update_centers: if False, then it runs one iteration to assign points in clusters.
     :param progress: whether to display progress bar + INFO
     :param tol: (float) threshold [default: 0.0001]
     :return: (torch.tensor, torch.tensor) cluster ids, cluster centers
@@ -154,7 +159,9 @@ def kmeans_equal(
 
             # update cluster center
             selected = torch.index_select(X, 0, selected_ind)
-            initial_state[index] = selected.mean(dim=0)
+
+            if update_centers:
+                initial_state[index] = selected.mean(dim=0)
 
         center_shift = torch.sum(
             torch.sqrt(
