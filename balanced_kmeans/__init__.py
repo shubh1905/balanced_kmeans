@@ -17,16 +17,21 @@ def initialize(X, num_clusters):
 
 
 def batch(fn):
-    def do(X, *args, **kwargs):
+    def do(X, *args, initial_state=None, **kwargs):
         batch_size = X.shape[0]
 
-        choices, centers = fn(X[0], *args, **kwargs)
+        if initial_state is None:
+            choices, centers = fn(X[0], *args, **kwargs)
+        else:
+            choices, centers = fn(X[0], *args, initial_state=initial_state[0], **kwargs)
         choices = choices.unsqueeze(0)
         centers = centers.unsqueeze(0)
 
         for i in range(1, batch_size):
-            curr_choices, curr_centers = fn(X[i], *args, **kwargs)
-
+            if initial_state is None:
+                curr_choices, curr_centers = fn(X[i], *args, **kwargs)
+            else:
+                curr_choices, curr_centers = fn(X[i], *args, initial_state=initial_state[i], **kwargs)
             # concat in the batch dimension
             curr_choices = curr_choices.unsqueeze(0)
             curr_centers = curr_centers.unsqueeze(0)
