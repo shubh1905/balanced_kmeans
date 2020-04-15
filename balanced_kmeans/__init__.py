@@ -10,9 +10,13 @@ def initialize(X, num_clusters):
     :param num_clusters: (int) number of clusters
     :return: (np.array) initial state
     """
-    num_samples = len(X)
-    indices = np.random.choice(num_samples, num_clusters, replace=False)
-    initial_state = X[indices]
+    num_samples = X.shape[1]
+    bs = X.shape[0]
+
+    indices = torch.empty(X.shape[:-1], device=X.device, dtype=torch.long)
+    for i in range(bs):
+        indices[i] = torch.randperm(num_samples, device=X.device)
+    initial_state = torch.gather(X, 1, indices.unsqueeze(-1).repeat(1, 1, X.shape[-1])).reshape(bs, num_clusters, -1, X.shape[-1]).mean(dim=-2)
     return initial_state
 
 
@@ -80,6 +84,7 @@ def kmeans(
 
 
     while True:
+        import pdb; pdb.set_trace()
         dis = pairwise_distance_function(X, initial_state)
         choice_cluster = torch.argmin(dis, dim=1)
 
@@ -118,7 +123,6 @@ def kmeans(
 
 
 
-@batch
 def kmeans_equal(
         X,
         num_clusters,
@@ -157,16 +161,16 @@ def kmeans_equal(
         choices = torch.argsort(dis, dim=-1)
         initial_state_pre = initial_state.clone()
         for index in range(num_clusters):
-            X_index, positions = torch.where(choices == index)
-            selected_ind = X_index[torch.argsort(positions)[:cluster_size]]
-            # mask out selected
-            choices[selected_ind] = index
+            cluster_positions = torch.argmax((choices == index).to(torch.long), dim=-1)
+            selected_ind = torch.argsort(cluster_positions, dim=-1)[:, :cluster_size]
 
+            choices.scatter_(1, selected_ind.unsqueeze(-1).repeat(1, 1, num_clusters), value=index)
             # update cluster center
-            selected = torch.index_select(X, 0, selected_ind)
+
 
             if update_centers:
-                initial_state[index] = selected.mean(dim=0)
+                initial_state[:, index] = torch.gather(X, 1, selected_ind.unsqueeze(-1).repeat(1, 1, X.shape[-1])).mean(dim=-2)
+
 
         center_shift = torch.sum(
             torch.sqrt(
@@ -190,7 +194,7 @@ def kmeans_equal(
         if iteration >= max_iters:
             break
 
-    return choices[:, 0], initial_state
+    return choices[:, :, 0], initial_state
 
 
 # Original implementation: https://github.com/subhadarship/kmeans_pytorch
@@ -214,11 +218,10 @@ def kmeans_predict(X, cluster_centers):
 def pairwise_distance(data1, data2):
 
     # N*1*M
-    A = data1.unsqueeze(dim=1)
+    A = data1.unsqueeze(dim=-2)
 
     # 1*N*M
-    B = data2.unsqueeze(dim=0)
-
+    B = data2.unsqueeze(dim=1)
     dis = (A - B) ** 2.0
     # return N*N matrix for pairwise distance
     dis = dis.sum(dim=-1).squeeze()
