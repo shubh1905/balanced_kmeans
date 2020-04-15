@@ -197,6 +197,56 @@ def kmeans_equal(
     return choices[:, :, 0], initial_state
 
 
+def lsh_clustering(X, num_clusters, cluster_size, r=1):
+    """
+        LSH clustering based on Euclidean distance.
+    """
+    bs, N, dim = X.shape
+    e2lsh = E2LSH(dim=dim, r=r)
+    _, indices = e2lsh(X.reshape(-1, dim)).reshape(X.shape[:-1]).sort(dim=-1)
+    return indices
+
+
+class LSH:
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError('LSH scheme not implemented')
+
+    def compute_hash_agreement(self, q_hash, k_hash):
+        return (q_hash == k_hash).min(dim=-1)[0].sum(dim=-1)
+
+
+def uniform(a, b, shape, device='cuda'):
+    '''
+        Draws shape samples from a uniform distribution U(a, b).
+
+    '''
+    return (b - a) * torch.rand(shape, device=device) + a
+
+class E2LSH(LSH):
+    def __init__(self, dim, r=1, device='cuda'):
+        super(E2LSH, self).__init__()
+        self.alpha = torch.normal(0, 1, (dim,), device=device)
+        self.beta = uniform(0, r, shape=(1,), device=device)
+        self.dim = dim
+        self.r = r
+
+    def __call__(self, vecs):
+        '''
+            L2 Sensitive Hashing based on p-stable distributions.
+            Also known as E2LSH.
+
+            Args:
+                vecs: (bs * N, dim) (dtype: torch.float32)
+            Output:
+                buckets: (bs * N, n_hashes) (dtype: torch.int32)
+        '''
+        projection = vecs @ self.alpha
+        projection_shift = projection + self.beta
+        projection_shift_rescale = projection_shift / self.r
+        return projection_shift_rescale.to(torch.long)
+
+
+
 # Original implementation: https://github.com/subhadarship/kmeans_pytorch
 def kmeans_predict(X, cluster_centers):
     """
