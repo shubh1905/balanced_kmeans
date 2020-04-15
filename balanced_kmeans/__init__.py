@@ -197,7 +197,7 @@ def kmeans_equal(
     return choices[:, :, 0], initial_state
 
 
-def lsh_clustering(X, num_clusters, cluster_size, r=1):
+def lsh_clustering(X, r=1):
     """
         LSH clustering based on Euclidean distance.
     """

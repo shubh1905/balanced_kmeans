@@ -19,5 +19,4 @@ def test_gpu_speed(batch_size, N, dim, num_clusters):
 def test_gpu_speed_lsh(batch_size, N, dim, num_clusters):
     cluster_size = N // num_clusters
     X = torch.rand(batch_size, N, dim, device='cuda')
-    choices = lsh_clustering(X, num_clusters=num_clusters,
-                             cluster_size=cluster_size)
+    choices = lsh_clustering(X)
