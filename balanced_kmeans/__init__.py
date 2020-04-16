@@ -197,13 +197,12 @@ def kmeans_equal(
     return choices[:, :, 0], initial_state
 
 
-def lsh_clustering(X, r=1):
+def lsh_clustering(X, n_hashes, r=1):
     """
         LSH clustering based on Euclidean distance.
     """
-    bs, N, dim = X.shape
-    e2lsh = E2LSH(dim=dim, r=r)
-    _, indices = e2lsh(X.reshape(-1, dim)).reshape(X.shape[:-1]).sort(dim=-1)
+    e2lsh = E2LSH(n_hashes=n_hashes, dim=X.shape[-1], r=r)
+    _, indices = e2lsh(X).reshape((n_hashes,) + X.shape[:-1]).sort(dim=-1)
     return indices
 
 
@@ -223,10 +222,10 @@ def uniform(a, b, shape, device='cuda'):
     return (b - a) * torch.rand(shape, device=device) + a
 
 class E2LSH(LSH):
-    def __init__(self, dim, r=1, device='cuda'):
+    def __init__(self, n_hashes, dim, r, device='cuda'):
         super(E2LSH, self).__init__()
-        self.alpha = torch.normal(0, 1, (dim,), device=device)
-        self.beta = uniform(0, r, shape=(1,), device=device)
+        self.alpha = torch.normal(0, 1, (dim, n_hashes), device=device)
+        self.beta = uniform(0, r, shape=(1, n_hashes), device=device)
         self.dim = dim
         self.r = r
 
@@ -236,14 +235,14 @@ class E2LSH(LSH):
             Also known as E2LSH.
 
             Args:
-                vecs: (bs * N, dim) (dtype: torch.float32)
+                vecs: (bs, N, dim) (dtype: torch.float32)
             Output:
-                buckets: (bs * N, n_hashes) (dtype: torch.int32)
+                buckets: (n_hashes, bs, N) (dtype: torch.int32)
         '''
         projection = vecs @ self.alpha
         projection_shift = projection + self.beta
-        projection_shift_rescale = projection_shift / self.r
-        return projection_shift_rescale.to(torch.long)
+        projection_rescale = projection_shift // self.r
+        return projection_shift.permute(2, 0, 1)
 
 
 
