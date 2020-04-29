@@ -241,7 +241,7 @@ class E2LSH(LSH):
         '''
         projection = vecs @ self.alpha
         projection_shift = projection + self.beta
-        projection_rescale = projection_shift // self.r
+        projection_rescale = projection_shift / self.r
         return projection_shift.permute(2, 0, 1)
 
 
