@@ -202,7 +202,7 @@ def lsh_clustering(X, n_hashes, r=1):
         LSH clustering based on Euclidean distance.
     """
     e2lsh = E2LSH(n_hashes=n_hashes, dim=X.shape[-1], r=r, device=X.device)
-    _, indices = e2lsh(X).reshape((n_hashes,) + X.shape[:-1]).sort(dim=-1)
+    indices = e2lsh(X).reshape((n_hashes,) + X.shape[:-1]).argsort(dim=-1)
     return indices
 
 

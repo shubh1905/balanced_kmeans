@@ -20,7 +20,7 @@ with io.open(os.path.join(CURDIR, "README.md"), "r", encoding="utf-8") as f:
 
 setup(
     name="balanced_kmeans",
-    version="0.0.9",
+    version="0.1.0",
     author="@giannisdaras",
     author_email="daras.giannhs@gmail.com",
     description="Balanced kmeans with cuda support in Pytorch.",
